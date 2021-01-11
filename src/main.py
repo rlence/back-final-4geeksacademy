@@ -9,6 +9,7 @@ from flask_cors import CORS
 from utils import APIException, generate_sitemap
 from admin import setup_admin
 from models import db, User
+from encrypted import encrypted_pass
 #from models import Person
 
 app = Flask(__name__)
@@ -30,11 +31,17 @@ def handle_invalid_usage(error):
 def sitemap():
     return generate_sitemap(app)
 
-@app.route('/user', methods=['GET'])
+@app.route('/user', methods=['POST'])
 def handle_hello():
-
+    body = request.get_json()
+    print(body)
+    new_pass = encrypted_pass(body['password'])
+    user = User(email=body['email'], password= new_pass)
+    db.session.add(user)
+    db.session.commit()
+    print(user)
     response_body = {
-        "msg": "Hello, this is your GET /user response "
+        "msg": "user login "
     }
 
     return jsonify(response_body), 200
