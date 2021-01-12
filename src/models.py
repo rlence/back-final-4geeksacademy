@@ -16,6 +16,9 @@ class User(db.Model):
     def __repr__(self):
         return '<User %r>' % self.email
 
+    def password_bcrypt(self):
+        return self.password
+
     def serialize(self):
         return {
             "id": self.id,
