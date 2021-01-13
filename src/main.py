@@ -2,6 +2,7 @@
 This module takes care of starting the API Server, Loading the DB and Adding the endpoints
 """
 import os
+from os.path import join, dirname, realpath
 from flask import Flask, request, jsonify, url_for
 from flask_migrate import Migrate
 from flask_swagger import swagger
@@ -10,6 +11,10 @@ from utils import APIException, generate_sitemap
 from admin import setup_admin
 from models import db, User, Post
 from encrypted import encrypted_pass, compare_pass
+
+from werkzeug.utils import secure_filename
+from werkzeug.datastructures import ImmutableMultiDict
+
 #from models import Person
 
 app = Flask(__name__)
@@ -73,15 +78,22 @@ def login_user():
         return "password incorrect", 401
     return jsonify("user login"), 200
 
+
 @app.route('/post', methods=['POST'])
 def create_post():
-    body = request.get_json()
+    data = dict(request.form)
+
+    f = request.files['file']
+    filename = secure_filename(f.filename)
+    f.save(os.path.join('./src/img',filename))
+    
     urlImg = 'https://blogthinkbig.com/wp-content/uploads/sites/4/2019/03/Python-Example-Logo-e1555498232969.jpg?fit=1500%2C663' 
-    new_post = Post(urlImg, body['text'], body['user_id'])
-    db.session.add(new_post)
-    db.session.commit()
-    print(new_post)
-    return jsonify(new_post.serialize()), 201
+    #new_post = Post(urlImg, body['text'], body['user_id'])
+    #db.session.add(new_post)
+    #db.session.commit()
+    #rint(new_post)
+    return jsonify("post created"), 201
+
 
 @app.route('/post/<id>', methods=['GET'])
 def get_my_post(id):
