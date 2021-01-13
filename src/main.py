@@ -8,7 +8,7 @@ from flask_swagger import swagger
 from flask_cors import CORS
 from utils import APIException, generate_sitemap
 from admin import setup_admin
-from models import db, User
+from models import db, User, Post
 from encrypted import encrypted_pass, compare_pass
 #from models import Person
 
@@ -72,6 +72,30 @@ def login_user():
     if(is_validate == False):
         return "password incorrect", 401
     return jsonify("user login"), 200
+
+@app.route('/post', methods=['POST'])
+def create_post():
+    body = request.get_json()
+    urlImg = 'https://blogthinkbig.com/wp-content/uploads/sites/4/2019/03/Python-Example-Logo-e1555498232969.jpg?fit=1500%2C663' 
+    new_post = Post(urlImg, body['text'], body['user_id'])
+    db.session.add(new_post)
+    db.session.commit()
+    print(new_post)
+    return jsonify(new_post.serialize()), 201
+
+@app.route('/post/<id>', methods=['GET'])
+def get_my_post(id):
+    all_post = Post.query.filter_by(user_id = id).all()
+    list_post = []
+    for post in all_post:
+        list_post.append(post.serialize())
+    print(all_post)
+    return jsonify(list_post), 200
+
+@app.route('/post', methods=['GET'])
+def all_post():
+    all_post = db.session.query(Post, User).join(Post).all()
+    return jsonify('todo los post'), 200
 
 # this only runs if `$ python src/main.py` is executed
 if __name__ == '__main__':
