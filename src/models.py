@@ -11,6 +11,7 @@ class User(db.Model):
     password = db.Column(db.String(80), unique=False, nullable=False)
     is_active = db.Column(db.Boolean(), unique=False, nullable=False)
     post = relationship("Post")
+    comment = relationship("Comment")
 
     def __init__(self, email, password):
         self.email = email
@@ -35,6 +36,7 @@ class Post(db.Model):
     urlImg = db.Column(db.String(240))
     text = db.Column(db.String(240), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    comment = relationship("Comment")
 
     def __init__(self, urlImg, text, user_id):
         self.urlImg = urlImg
@@ -50,4 +52,26 @@ class Post(db.Model):
             "urlImg": self.urlImg,
             "text":self.text,
             "user_id":self.user_id
+        }
+
+class Comment(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    post_id = db.Column(db.Integer, db.ForeignKey('post.id'))
+    comment = db.Column(db.String(240), nullable=False)
+
+    def __init__(self, user_id, post_id, comment):
+        self.user_id = user_id
+        self.post_id = post_id
+        self.comment = comment
+
+    def __repr__(self):
+        return '<Comment %r>' % self.id 
+
+    def serialize(self):
+        return {
+            "id": self.id,
+            "user_id": self.user_id,
+            "post_id": self.post_id,
+            "comment": self.comment
         }

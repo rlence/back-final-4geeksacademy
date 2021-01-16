@@ -9,7 +9,7 @@ from flask_swagger import swagger
 from flask_cors import CORS
 from utils import APIException, generate_sitemap
 from admin import setup_admin
-from models import db, User, Post
+from models import db, User, Post, Comment
 from encrypted import encrypted_pass, compare_pass
 
 from werkzeug.utils import secure_filename
@@ -25,7 +25,7 @@ MIGRATE = Migrate(app, db)
 db.init_app(app)
 CORS(app)
 setup_admin(app)
-HOST = 'https://3000-d4ff11bd-ce8e-4f2e-9639-7fa4dbf90e0d.ws-eu03.gitpod.io/'
+HOST = 'https://3000-c490dbbd-2fff-4615-9811-dd7b8cd75bc8.ws-eu03.gitpod.io/'
 
 # Handle/serialize errors like a JSON object
 @app.errorhandler(APIException)
@@ -40,9 +40,6 @@ def sitemap():
 #send img
 @app.route('/<filename>', methods=['GET'])
 def send_img(filename):
-    print(filename)
-    path = os.path.join('./src/img')
-    print(path)
     return  send_file("./img/" + filename)
 
 @app.route('/user/register', methods=['POST'])
@@ -60,7 +57,6 @@ def register_user():
         new_user = User(body['email'], new_pass)
         db.session.add(new_user)
         db.session.commit()
-        print(new_user)
         response_body = {
             "msg": new_user.serialize()
         }
@@ -74,15 +70,11 @@ def register_user():
 
 @app.route('/user/login', methods=['POST'])
 def login_user():
-
     body = request.get_json()
-    print(body)
     user = User.query.filter_by(email=body['email']).first()
     if(user is None):
         return "user not exist", 401
-    print(user)
     is_validate = compare_pass(body['password'], user.password_bcrypt())
-    print(is_validate)
     if(is_validate == False):
         return "password incorrect", 401
     return jsonify("user login"), 200
@@ -92,15 +84,25 @@ def login_user():
 def create_post():
 
     data = dict(request.form)
-    
     f = request.files['file']
     filename = secure_filename(f.filename)
     f.save(os.path.join('./src/img',filename))
+
     img_url = HOST + filename
     new_post = Post(img_url, data['text'], data['user_id'])
+    
     db.session.add(new_post)
     db.session.commit()
     return jsonify(new_post.serialize()), 201
+
+@app.route('/comment', methods=['POST'])
+def create_commet():
+    data = request.get_json()
+    new_comment = Comment(data['user_id'], data['post_id'], data['comment'])
+    db.session.add(new_comment)
+    db.session.commit()
+
+    return jsonify(new_comment.serialize()), 201
 
 
 @app.route('/post/<id>', methods=['GET'])
@@ -109,12 +111,13 @@ def get_my_post(id):
     list_post = []
     for post in all_post:
         list_post.append(post.serialize())
-    print(all_post)
     return jsonify(list_post), 200
+
 
 @app.route('/post', methods=['GET'])
 def all_post():
     all_post = db.session.query(Post, User).join(Post).all()
+    print(all_post)
     return jsonify('todo los post'), 200
 
 # this only runs if `$ python src/main.py` is executed
