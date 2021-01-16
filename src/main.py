@@ -95,30 +95,43 @@ def create_post():
     db.session.commit()
     return jsonify(new_post.serialize()), 201
 
-@app.route('/comment', methods=['POST'])
-def create_commet():
-    data = request.get_json()
-    new_comment = Comment(data['user_id'], data['post_id'], data['comment'])
-    db.session.add(new_comment)
-    db.session.commit()
-
-    return jsonify(new_comment.serialize()), 201
-
-
-@app.route('/post/<id>', methods=['GET'])
-def get_my_post(id):
-    all_post = Post.query.filter_by(user_id = id).all()
-    list_post = []
-    for post in all_post:
-        list_post.append(post.serialize())
-    return jsonify(list_post), 200
-
-
 @app.route('/post', methods=['GET'])
-def all_post():
-    all_post = db.session.query(Post, User).join(Post).all()
-    print(all_post)
-    return jsonify('todo los post'), 200
+def get_all_post():
+    all_post = db.session.query(Post, User).join(User).all()
+    new_all_post = []
+
+    for post in all_post:
+        new_obj = {
+            "post":post[0].serialize(),
+            "user":post[1].serialize()
+        }
+        new_all_post.append(new_obj)
+        
+    return jsonify(new_all_post), 200
+
+
+@app.route('/post/<int:id>', methods=['GET'])
+def get_my_post(id):
+
+    print(id)
+    my_post = Post.query.filter_by(user_id=id).all()
+    print(my_post)
+    all_post = []
+    for post in my_post:
+        all_post.append(post.serialize())
+
+    return jsonify(all_post), 200
+
+@app.route('/post/<int:id>', methods=['DELETE'])
+def delete_post(id):
+    print(id)
+    post = Post.query.get(id)
+    db.session.delete(post)
+    db.session.commit()
+    print(post)
+    return jsonify('post borrado'), 200
+
+
 
 # this only runs if `$ python src/main.py` is executed
 if __name__ == '__main__':
