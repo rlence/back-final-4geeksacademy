@@ -16,6 +16,7 @@ from werkzeug.utils import secure_filename
 from werkzeug.datastructures import ImmutableMultiDict
 
 from jwt_auth import encode_token, decode_token
+import jwt
 
 from functools import wraps
 
@@ -48,13 +49,16 @@ def token_required(f):
                 return jsonify("no authorization"), 401
 
         except OSError as err:
-
             print(err)
             return jsonify("no authorization"), 401
 
+        except jwt.exceptions.ExpiredSignatureError as err:
+            print(err)
+            return jsonify("expired token"), 403
+
         return f(*args , **kwargs)
     return decorador
-    
+
 # Handle/serialize errors like a JSON object
 @app.errorhandler(APIException)
 def handle_invalid_usage(error):
