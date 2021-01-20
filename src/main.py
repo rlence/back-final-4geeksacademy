@@ -18,6 +18,8 @@ from werkzeug.datastructures import ImmutableMultiDict
 from jwt_auth import encode_token, decode_token
 import jwt
 
+from router.post import post_route
+
 from functools import wraps
 
 #from models import Person
@@ -73,6 +75,8 @@ def sitemap():
 @app.route('/<filename>', methods=['GET'])
 def send_img(filename):
     return  send_file("./img/" + filename)
+
+post = post_route(app, token_required)
 
 @app.route('/user/register', methods=['POST'])
 def register_user():
