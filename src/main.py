@@ -15,18 +15,46 @@ from encrypted import encrypted_pass, compare_pass
 from werkzeug.utils import secure_filename
 from werkzeug.datastructures import ImmutableMultiDict
 
+from jwt_auth import encode_token, decode_token
+
+from functools import wraps
+
 #from models import Person
 
 app = Flask(__name__, static_folder="./img")
 app.url_map.strict_slashes = False
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DB_CONNECTION_STRING')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['SECRET_KEY'] = 'thisisasuperkey'
 MIGRATE = Migrate(app, db)
 db.init_app(app)
 CORS(app)
 setup_admin(app)
 HOST = 'https://3000-c490dbbd-2fff-4615-9811-dd7b8cd75bc8.ws-eu03.gitpod.io/'
 
+
+#decorador
+def token_required(f):
+    @wraps(f)
+    def decorador(*args , **kwargs ):
+        try:
+            auth = request.headers.get('Authorization')
+            if auth is None:
+                return jsonify("no token"), 403
+            token = auth.split(' ')
+            data = decode_token(token[1], app.config['SECRET_KEY'] )
+            user = User.query.get(data['user']['id'])
+            if user is None:
+                return jsonify("no authorization"), 401
+
+        except OSError as err:
+
+            print(err)
+            return jsonify("no authorization"), 401
+
+        return f(*args , **kwargs)
+    return decorador
+    
 # Handle/serialize errors like a JSON object
 @app.errorhandler(APIException)
 def handle_invalid_usage(error):
@@ -70,6 +98,10 @@ def register_user():
 
 @app.route('/user/login', methods=['POST'])
 def login_user():
+
+    auth = request.authorization
+    print(auth)
+
     body = request.get_json()
     user = User.query.filter_by(email=body['email']).first()
     if(user is None):
@@ -77,7 +109,10 @@ def login_user():
     is_validate = compare_pass(body['password'], user.password_bcrypt())
     if(is_validate == False):
         return "password incorrect", 401
-    return jsonify("user login"), 200
+
+    token = encode_token( user.serialize() , app.config['SECRET_KEY'])
+    print(token)
+    return jsonify({ "acces_token":token}), 200
 
 
 @app.route('/post', methods=['POST'])
@@ -96,6 +131,7 @@ def create_post():
     return jsonify(new_post.serialize()), 201
 
 @app.route('/post', methods=['GET'])
+@token_required
 def get_all_post():
     all_post = db.session.query(Post, User).join(User).all()
     new_all_post = []
