@@ -42,14 +42,17 @@ def token_required(f):
     def decorador(*args , **kwargs ):
         try:
             auth = request.headers.get('Authorization')
+            print(auth)
             if auth is None:
                 return jsonify("no token"), 403
             token = auth.split(' ')
             data = decode_token(token[1], app.config['SECRET_KEY'] )
             user = User.query.get(data['user']['id'])
+ 
             if user is None:
                 return jsonify("no authorization"), 401
-
+            
+            return f(data, *args , **kwargs)
         except OSError as err:
             print(err)
             return jsonify("no authorization"), 401
@@ -58,7 +61,7 @@ def token_required(f):
             print(err)
             return jsonify("expired token"), 403
 
-        return f(*args , **kwargs)
+        
     return decorador
 
 # Handle/serialize errors like a JSON object
