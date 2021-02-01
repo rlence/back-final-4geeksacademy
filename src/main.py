@@ -12,6 +12,8 @@ from admin import setup_admin
 from models import db, User, Post, Comment
 from encrypted import encrypted_pass, compare_pass
 
+from send_email import sen_email
+
 from werkzeug.utils import secure_filename
 from werkzeug.datastructures import ImmutableMultiDict
 
@@ -177,6 +179,11 @@ def delete_post(id):
     db.session.commit()
     print(post)
     return jsonify('post borrado'), 200
+
+@app.route('/test/email', methods=['GET'])
+def send_test_email():
+    sen_email()
+    return jsonify('email send'), 200
 
 
 

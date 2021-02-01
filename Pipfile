@@ -22,6 +22,7 @@ bcrypt = "*"
 werkzeug = "*"
 jwt = "*"
 pyjwt = "*"
+sendgrid = "*"
 
 [requires]
 python_version = "3.8"
