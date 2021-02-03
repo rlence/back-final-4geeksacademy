@@ -44,7 +44,7 @@ def token_required(f):
     def decorador(*args , **kwargs ):
         try:
             auth = request.headers.get('Authorization')
-            print(auth)
+            print('AUTH',auth)
             if auth is None:
                 return jsonify("no token"), 403
             token = auth.split(' ')
@@ -181,9 +181,18 @@ def delete_post(id):
     return jsonify('post borrado'), 200
 
 @app.route('/test/email', methods=['GET'])
-def send_test_email():
+@token_required
+def send_test_email(user):
+    print('enviando email')
     sen_email()
     return jsonify('email send'), 200
+
+
+@app.route('/test/token', methods=["GET"])
+@token_required
+def test_token(user):
+    print(user)
+    return jsonify('reciviendo el token'), 200
 
 
 
