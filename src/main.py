@@ -11,6 +11,11 @@ from utils import APIException, generate_sitemap
 from admin import setup_admin
 from models import db, User, Post, Comment
 from encrypted import encrypted_pass, compare_pass
+#CLOUDINARY
+import cloudinary
+import cloudinary.api
+from cloudinary.uploader import upload
+from cloudinary.utils import cloudinary_url
 
 from send_email import sen_email
 
@@ -37,6 +42,13 @@ CORS(app)
 setup_admin(app)
 HOST = 'https://3000-c490dbbd-2fff-4615-9811-dd7b8cd75bc8.ws-eu03.gitpod.io/'
 
+CLOUDINARY_URL= "cloudinary://857487489643416:XzeiGd_T_xgdve1z3ehQDMMj0rQ@dmmdulrrv"
+
+cloudinary.config( 
+  cloud_name = "dmmdulrrv", 
+  api_key = "857487489643416", 
+  api_secret = "XzeiGd_T_xgdve1z3ehQDMMj0rQ" 
+)
 
 #decorador
 def token_required(f):
@@ -130,17 +142,20 @@ def login_user():
 
 @app.route('/post', methods=['POST'])
 def create_post():
-
+    print(request.form)
     data = dict(request.form)
+    print(data)
     f = request.files['file']
-    filename = secure_filename(f.filename)
-    f.save(os.path.join('./src/img',filename))
-
-    img_url = HOST + filename
-    new_post = Post(img_url, data['text'], data['user_id'])
-    
+    upload_result = upload(f)
+    print(upload_result['url'])
+    #filename = secure_filename(f.filename)
+    #f.save(os.path.join('./src/img',filename))
+    #img_url = HOST + filename
+    new_post = Post(upload_result['url'], data['text'], data['user_id'])
+    print(new_post)
     db.session.add(new_post)
     db.session.commit()
+
     return jsonify(new_post.serialize()), 201
 
 @app.route('/post', methods=['GET'])
